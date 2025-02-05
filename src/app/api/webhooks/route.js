@@ -82,7 +82,7 @@ export async function POST(req) {
             },
           })
         } catch (error) {
-          console.log('Error updating user metadata:', error);
+          console.log('E:', error);
           
         }
       }
