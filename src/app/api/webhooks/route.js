@@ -1,6 +1,7 @@
 import { Webhook } from 'svix'
 import { headers } from 'next/headers'
 import { createOrUpdateUser, deleteUser } from '@/lib/actions/user'
+import clerkClient from "@clerk/nextjs/server";
 
 export async function POST(req) {
   const SIGNING_SECRET = process.env.SIGNING_SECRET
@@ -78,8 +79,8 @@ export async function POST(req) {
             publicMetadata: {
               userMongoId: user._id,
               isAdmin: user.isAdmin,
-            }
-          })
+            },
+          });
         } catch (error) {
           console.log('Error updating user metadata:', error);
           
