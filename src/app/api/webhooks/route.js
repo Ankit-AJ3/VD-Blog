@@ -1,6 +1,6 @@
 import { Webhook } from 'svix'
 import { headers } from 'next/headers'
-import { createOrUpdateUser } from '@/lib/actions/user'
+import { createOrUpdateUser, deleteUser } from '@/lib/actions/user'
 
 export async function POST(req) {
   const SIGNING_SECRET = process.env.SIGNING_SECRET
@@ -96,7 +96,7 @@ export async function POST(req) {
   if(eventType === 'user.deleted') {
     const { id } = evt?.data;
     try {
-      await deletedUser(id);
+      await deleteUser(id);
     } catch (error) {
       console.log('Error deleting user:', error);
       return new response("Error occured", { status: 400 });
