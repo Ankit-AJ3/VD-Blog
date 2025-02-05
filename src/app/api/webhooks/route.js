@@ -1,7 +1,7 @@
 import { Webhook } from 'svix';
 import { headers } from 'next/headers';
 import { createOrUpdateUser, deleteUser } from '@/lib/actions/user';
-import { users } from "@clerk/clerk-sdk-node"; // Correct Clerk import
+import { clerkClient } from "@clerk/clerk-sdk-node"; // Correct Clerk import
 
 export async function POST(req) {
   const SIGNING_SECRET = process.env.SIGNING_SECRET;
@@ -11,6 +11,7 @@ export async function POST(req) {
   }
 
   const wh = new Webhook(SIGNING_SECRET);
+
   const headerPayload = await headers();
   const svix_id = headerPayload.get('svix-id');
   const svix_timestamp = headerPayload.get('svix-timestamp');
@@ -22,8 +23,8 @@ export async function POST(req) {
 
   const payload = await req.json();
   const body = JSON.stringify(payload);
-  let evt;
 
+  let evt;
   try {
     evt = wh.verify(body, {
       'svix-id': svix_id,
@@ -44,32 +45,38 @@ export async function POST(req) {
     const { first_name, last_name, image_url, email_addresses, username } = evt?.data;
 
     try {
-      const user = await createOrUpdateUser(id, first_name, last_name, image_url, email_addresses, username);
+      const user = await createOrUpdateUser(
+        id,
+        first_name,
+        last_name,
+        image_url,
+        email_addresses,
+        username
+      );
 
       if (user && eventType === 'user.created') {
         try {
-          await users.update(id, {
+          await clerkClient.users.update(id, {
             publicMetadata: {
               userMongoId: user._id,
               isAdmin: user.isAdmin,
             },
           });
         } catch (error) {
-          console.log('Error updating user metadata:', error);
+          console.error('Error updating user metadata:', error);
         }
       }
     } catch (error) {
-      console.log('Error creating or updating user:', error);
+      console.error('Error creating or updating user:', error);
       return new Response('Error occurred', { status: 400 });
     }
   }
 
   if (eventType === 'user.deleted') {
-    const { id } = evt?.data;
     try {
       await deleteUser(id);
     } catch (error) {
-      console.log('Error deleting user:', error);
+      console.error('Error deleting user:', error);
       return new Response('Error occurred', { status: 400 });
     }
   }
